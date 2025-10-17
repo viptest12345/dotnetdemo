@@ -1,0 +1,12 @@
+version: 0.0
+os: windows
+
+files:
+  - source: \
+    destination: C:\websites\DotNetApp
+
+hooks:
+  AfterInstall:
+    - location: scripts\restart_service.ps1
+      timeout: 300
+      runas: Administrator
