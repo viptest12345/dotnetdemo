@@ -17,7 +17,7 @@ namespace WeatherApi.Controllers
 
             if (serverIpAddress != null)
             {
-                return Ok("ServerIP: "+serverIpAddress.ToString());
+                return Ok("ServerIP Address: "+serverIpAddress.ToString());
             }
             else
             {
