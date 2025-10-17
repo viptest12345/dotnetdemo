@@ -1,0 +1,40 @@
+image: mcr.microsoft.com/dotnet/sdk:8.0
+
+stages:
+  - build
+  - deploy
+
+variables:
+  AWS_DEFAULT_REGION: us-east-1
+  APP_NAME: DotNet8App
+  DEPLOYMENT_GROUP: DotNet8AppGroup
+  S3_BUCKET: dotnet8-codedeploy-artifacts
+  PACKAGE_NAME: dotnet8app.zip
+
+before_script:
+  - apt-get update -y
+  - apt-get install -y zip awscli
+
+build_job:
+  stage: build
+  script:
+    - dotnet restore
+    - dotnet publish -c Release -o publish
+    - zip -r $PACKAGE_NAME publish buildspec.yml scripts/
+  artifacts:
+    paths:
+      - $PACKAGE_NAME
+
+deploy_job:
+  stage: deploy
+  only:
+    - main
+  script:
+    - echo "Uploading package to S3..."
+    - aws s3 cp $PACKAGE_NAME s3://$S3_BUCKET/$PACKAGE_NAME
+    - echo "Creating CodeDeploy deployment..."
+    - aws deploy create-deployment \
+        --application-name $APP_NAME \
+        --deployment-group-name $DEPLOYMENT_GROUP \
+        --s3-location bucket=$S3_BUCKET,bundleType=zip,key=$PACKAGE_NAME \
+        --region $AWS_DEFAULT_REGION
