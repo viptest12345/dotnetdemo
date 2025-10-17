@@ -31,7 +31,7 @@ jobs:
           dotnet publish -c Release -o publish
 
       - name: Zip deployment package
-        run: zip -r $PACKAGE_NAME publish buildspec.yml scripts/
+        run: zip -r $PACKAGE_NAME publish appspec.yml scripts/
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
