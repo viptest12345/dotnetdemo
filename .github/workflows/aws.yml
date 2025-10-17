@@ -1,0 +1,52 @@
+name: Deploy .NET 8 App to AWS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      APP_NAME: ${{ secrets.APP_NAME }}
+      DEPLOYMENT_GROUP: ${{ secrets.DEPLOYMENT_GROUP }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      PACKAGE_NAME: dotnet8app.zip
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore and Build
+        run: |
+          dotnet restore
+          dotnet publish -c Release -o publish
+
+      - name: Zip deployment package
+        run: zip -r $PACKAGE_NAME publish buildspec.yml scripts/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload to S3
+        run: aws s3 cp $PACKAGE_NAME s3://$S3_BUCKET/$PACKAGE_NAME
+
+      - name: Create deployment in CodeDeploy
+        run: |
+          aws deploy create-deployment \
+            --application-name $APP_NAME \
+            --deployment-group-name $DEPLOYMENT_GROUP \
+            --s3-location bucket=$S3_BUCKET,bundleType=zip,key=$PACKAGE_NAME \
+            --region $AWS_REGION
