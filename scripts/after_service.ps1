@@ -1,6 +1,13 @@
-Write-Host "Running AfterInstall: Performing post-install tasks..."
+Write-Host "===== Running AfterInstall: verifying deployment files ====="
 
-# Example: Restore config file from backup
-# Copy-Item -Path "C:\backup\web.config" -Destination "C:\inetpub\wwwroot\MyDotNetApp\web.config" -Force
+$webRoot = "C:\websites\DotNetApp"
 
-Write-Host "AfterInstall completed."
+if (Test-Path $webRoot) {
+    Write-Host "Deployment files copied to: $webRoot"
+} else {
+    Write-Host "ERROR: Deployment folder missing."
+    exit 1
+}
+
+Write-Host "===== AfterInstall completed successfully ====="
+exit 0

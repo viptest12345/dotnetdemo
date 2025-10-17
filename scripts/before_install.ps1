@@ -1,14 +1,25 @@
-Write-Host "Running BeforeInstall: Stopping existing app..."
+Write-Host "===== Running BeforeInstall: stopping IIS site and cleaning old files ====="
 
-# Stop IIS website or your service
-# Example: if your app runs as a Windows service
-$serviceName = "DotNet8App"
-if (Get-Service $serviceName -ErrorAction SilentlyContinue) {
-    Stop-Service -Name $serviceName -Force
-    Write-Host "Service $serviceName stopped successfully."
+$siteName = "DotNet8App"
+$webRoot = "C:\websites\DotNetApp"
+
+# Stop IIS site if running
+Import-Module WebAdministration
+if (Get-Website -Name $siteName -ErrorAction SilentlyContinue) {
+    Write-Host "Stopping IIS site: $siteName"
+    Stop-Website -Name $siteName
+} else {
+    Write-Host "IIS site '$siteName' not found. Skipping stop."
 }
 
-# Optional: Clean old files before copying new ones
-Write-Host "Cleaning old files..."
-Remove-Item -Recurse -Force C:\websites\DotNetApp\* -ErrorAction SilentlyContinue
-Write-Host "BeforeInstall completed."
+# Clean old files safely
+if (Test-Path $webRoot) {
+    Write-Host "Cleaning old files in $webRoot ..."
+    Get-ChildItem -Path $webRoot -Recurse -Force | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
+} else {
+    Write-Host "Folder not found, creating new folder..."
+    New-Item -ItemType Directory -Force -Path $webRoot | Out-Null
+}
+
+Write-Host "===== BeforeInstall completed successfully ====="
+exit 0
